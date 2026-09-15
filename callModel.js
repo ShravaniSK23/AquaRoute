@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const MODELS = {
   small: "gemini-3.5-flash-lite",
-  large: "gemini-2.5-pro"
+  large: "gemini-3.5-flash"
 };
 
 async function callModel(prompt, tier) {
