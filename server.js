@@ -4,6 +4,7 @@ const express = require("express");
 const classify = require("./classify");
 const callModel = require("./callModel");
 const { checkCache, store } = require("./cache");
+const estimate = require("./estimate");
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.post("/generate", async (req, res) => {
         model: null,
         response: cacheResult.response,
         usage: null,
+        resources: estimate("cached", 0),
         cached: true
       });
     }
@@ -32,15 +34,22 @@ app.post("/generate", async (req, res) => {
     // 3. Call the appropriate Gemini model
     const result = await callModel(prompt, tier);
 
-    // 4. Store the response in cache
+    // 4. Estimate resource usage
+    const resources = estimate(
+      tier,
+      result.usage?.totalTokenCount
+    );
+
+    // 5. Store the response in cache
     store(cacheResult.embedding, result.text);
 
-    // 5. Return the response
+    // 6. Return the response
     res.json({
       tier,
       model: result.model,
       response: result.text,
       usage: result.usage,
+      resources,
       cached: false
     });
 
