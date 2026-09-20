@@ -1,6 +1,6 @@
 /**
  * AquaRoute API Client
- * Manages /health polling and SSE pipeline streaming via POST /generate + GET /generate/stream
+ * Manages /health polling, SSE pipeline streaming, and Compare Mode.
  */
 
 const Api = {
@@ -24,12 +24,14 @@ const Api = {
   /**
    * Submit prompt to POST /generate and stream pipeline stages via EventSource GET /generate/stream?id=<requestId>
    * @param {string} prompt 
+   * @param {object} options 
+   * @param {boolean} options.noCache 
    * @param {object} callbacks 
    * @param {function} callbacks.onStage 
    * @param {function} callbacks.onError 
    * @param {function} callbacks.onComplete 
    */
-  async generateStream(prompt, { onStage, onError, onComplete }) {
+  async generateStream(prompt, options = {}, { onStage, onError, onComplete }) {
     try {
       // 1. Send POST request to receive unique requestId
       const postRes = await fetch("/generate", {
@@ -37,7 +39,10 @@ const Api = {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({
+          prompt,
+          noCache: Boolean(options.noCache)
+        })
       });
 
       const postData = await postRes.json();
@@ -107,6 +112,26 @@ const Api = {
       console.error("[AquaRoute generateStream Error]", err);
       if (onError) onError(err);
     }
+  },
+
+  /**
+   * Submit prompt for Compare Mode (runs Small and Large model concurrently)
+   * @param {string} prompt 
+   * @returns {Promise<object>}
+   */
+  async compareModels(prompt) {
+    const res = await fetch("/generate/compare", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || "Compare Mode execution failed");
+    }
+    return data;
   }
 };
 

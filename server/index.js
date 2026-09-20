@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
+const helmet = require("helmet");
 
 const config = require("./config");
 const generateRouter = require("./routes/generate");
@@ -12,14 +13,17 @@ config.validateConfig();
 
 const app = express();
 
+// 2. Security headers via Helmet (disabling CSP header so CDN scripts and Google Fonts work seamlessly in demo)
+app.use(helmet({ contentSecurityPolicy: false }));
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
 
-// 2. Mount routes
+// 3. Mount routes
 app.use(healthRouter);
 app.use(generateRouter);
 
-// 3. Centralized error handling middleware
+// 4. Centralized error handling middleware
 app.use(errorHandler);
 
 app.listen(config.port, () => {

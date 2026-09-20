@@ -26,25 +26,31 @@
       </div>
     </div>
 
-    <!-- Status Strip polling /health -->
-    <div class="status-strip">
-      <div class="status-item">
-        <span class="status-dot" id="status-api-dot"></span>
-        <span id="status-api-text">API Checking...</span>
+    <div class="header-controls">
+      <!-- Status Strip polling /health -->
+      <div class="status-strip">
+        <div class="status-item">
+          <span class="status-dot" id="status-api-dot"></span>
+          <span id="status-api-text">API Checking...</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot" id="status-cache-dot"></span>
+          <span id="status-cache-text">Cache Active</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot online"></span>
+          <span>Estimator Active</span>
+        </div>
       </div>
-      <div class="status-item">
-        <span class="status-dot" id="status-cache-dot"></span>
-        <span>Cache Active</span>
-      </div>
-      <div class="status-item">
-        <span class="status-dot online"></span>
-        <span>Estimator Active</span>
-      </div>
+
+      <!-- Header Action Buttons -->
+      <button id="export-btn" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;">Export Session</button>
+      <button id="reset-btn" class="btn-destructive">Reset Session</button>
     </div>
   </header>
 
   <!-- =========================================
-       MAIN DASHBOARD
+       MAIN DASHBOARD LAYOUT
   ========================================== -->
   <main>
 
@@ -53,7 +59,7 @@
       <!-- AquaRoute Session Water -->
       <div class="metric-card">
         <div class="metric-label">AquaRoute Session Impact</div>
-        <div class="metric-value highlight" id="metric-routed-total">0.000 mL</div>
+        <div class="metric-value highlight" id="metric-routed-total">0.0000 mL</div>
         <div class="metric-sub">Cumulative estimated water consumed</div>
       </div>
 
@@ -72,40 +78,131 @@
       </div>
     </section>
 
-    <!-- LIVE ROUTING PIPELINE DIAGRAM -->
-    <section class="pipeline-section">
-      <div class="pipeline-header">
-        <div class="pipeline-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-          Live Routing Pipeline Stream
-        </div>
+    <!-- SESSION ANALYTICS BAR (Tier 2 Feature 14) -->
+    <section class="analytics-section">
+      <div class="analytics-item">
+        <span class="analytics-label">Session Queries</span>
+        <span class="analytics-val" id="analytics-total-count">0</span>
       </div>
+      <div class="analytics-item">
+        <span class="analytics-label">Small / Large Ratio</span>
+        <span class="analytics-val" id="analytics-ratio">0 S / 0 L</span>
+      </div>
+      <div class="analytics-item">
+        <span class="analytics-label">Cache Hit Rate</span>
+        <span class="analytics-val" id="analytics-hit-rate">0%</span>
+      </div>
+    </section>
+
+    <!-- BENCHMARK MODE PANEL (Tier 3 Feature 20 - Visually Isolated) -->
+    <section class="benchmark-section" id="benchmark-panel"></section>
+
+    <!-- 2-COLUMN DASHBOARD BODY -->
+    <div class="dashboard-layout">
       
-      <!-- Container populated dynamically by pipeline.js -->
-      <div class="pipeline-diagram" id="pipeline-diagram"></div>
-    </section>
+      <!-- MAIN COLUMN -->
+      <div class="main-column">
 
-    <!-- PROMPT INPUT & DEMO CHIPS -->
-    <section class="prompt-section">
-      <div class="demo-chips">
-        <span class="chip-label">Demo Prompt Chips:</span>
-        <button class="chip" data-prompt="What is 2 plus 2?">Simple (Lightweight Tier)</button>
-        <button class="chip" data-prompt="Design a distributed architecture that handles 100,000 requests per second with high availability.">Complex (Large Tier)</button>
-        <button class="chip" data-prompt="What is 2 plus 2?">Cache Hit (Repeat Simple)</button>
+        <!-- LIVE ROUTING PIPELINE DIAGRAM -->
+        <section class="pipeline-section">
+          <div class="pipeline-header">
+            <div class="pipeline-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+              Live Routing Pipeline Stream
+            </div>
+          </div>
+          <div class="pipeline-diagram" id="pipeline-diagram"></div>
+        </section>
+
+        <!-- PROMPT INPUT & CONTROLS -->
+        <section class="prompt-section">
+          <div class="prompt-toolbar">
+            <div class="demo-chips">
+              <span class="chip-label">Demo Chips:</span>
+              <button class="chip" data-prompt="What is 2 plus 2?">Simple Prompt</button>
+              <button class="chip" data-prompt="Design a distributed architecture that handles 100,000 requests per second with high availability.">Complex Prompt</button>
+              <button class="chip" data-prompt="What is 2 plus 2?">Cache Hit (Repeat)</button>
+            </div>
+            
+            <!-- Compare Mode Toggle Button -->
+            <button id="compare-btn" class="btn-secondary">Compare Mode</button>
+          </div>
+
+          <textarea id="prompt-input" placeholder="Enter prompt to execute through AquaRoute telemetry pipeline..." autofocus></textarea>
+
+          <div class="prompt-footer">
+            <div class="input-hint">Press <strong>Enter</strong> to send · <strong>Shift + Enter</strong> for line break</div>
+            <div class="action-buttons">
+              <button id="send-btn" class="btn-primary">
+                <span>Send</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- RESPONSE CARDS CONTAINER -->
+        <section id="response-container" class="response-container"></section>
+
       </div>
 
-      <textarea id="prompt-input" placeholder="Enter prompt to execute through AquaRoute pipeline..." autofocus></textarea>
+      <!-- SIDEBAR COLUMN -->
+      <aside class="sidebar">
 
-      <div class="prompt-footer">
-        <div class="input-hint">Press <strong>Enter</strong> to send · <strong>Shift + Enter</strong> for line break</div>
-        <button id="send-btn" class="btn-primary">
-          <span>Send</span>
-        </button>
-      </div>
-    </section>
+        <!-- RECENT REQUEST TIMELINE (Tier 2 Feature 15) -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">
+            <span>Recent Timeline</span>
+            <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">Session Log</span>
+          </div>
+          <div class="timeline-list" id="timeline-container"></div>
+        </div>
 
-    <!-- RESPONSE CARDS & TELEMETRY output -->
-    <section id="response-container" class="response-container"></section>
+        <!-- SETTINGS PANEL (Tier 3 Feature 21) -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">Settings</div>
+          <div class="settings-group">
+            <div class="setting-row">
+              <span class="setting-label">Semantic Cache</span>
+              <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="setting-cache-toggle" checked style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
+              </label>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">Water Unit</span>
+              <select id="setting-water-unit" class="setting-select">
+                <option value="mL">mL (milliliters)</option>
+                <option value="L">L (liters)</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">Energy Unit</span>
+              <select id="setting-energy-unit" class="setting-select">
+                <option value="Wh">Wh (Watt-hours)</option>
+                <option value="kWh">kWh (k kilowatt-hours)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESOURCE METHODOLOGY PANEL (Tier 2 Feature 18) -->
+        <div class="sidebar-card">
+          <div class="sidebar-title">Methodology</div>
+          <details class="methodology-details">
+            <summary>📖 Intensity Assumptions & Rates</summary>
+            <div class="methodology-content">
+              <p>Per-token intensity rates applied to real Gemini token counts:</p>
+              <ul>
+                <li><strong>Small (Flash Lite):</strong> 0.0003 Wh/token, 0.002 mL water/token</li>
+                <li><strong>Large (Flash):</strong> 0.006 Wh/token, 0.04 mL water/token</li>
+              </ul>
+              <p style="margin-top: 8px;"><strong>Limitations:</strong> Real datacenter water consumption depends on WUE, cooling system architecture, PUE, and local grid energy mix.</p>
+            </div>
+          </details>
+        </div>
+
+      </aside>
+
+    </div>
 
   </main>
 
