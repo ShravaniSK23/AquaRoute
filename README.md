@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
 [![Sustainability](https://img.shields.io/badge/Earth%20Forward-Water%20Conserving-10b981.svg)](#)
 
-> **AquaRoute** is an AI sustainability gateway and live infrastructure telemetry dashboard designed to make the environmental footprint of LLM queries transparent and actionable. By intelligently classifying query complexity, querying a zero-water semantic cache, and dynamically routing between small and large model tiers, AquaRoute slashes datacenter evaporative cooling water and energy consumption by up to **95% per request**.
+> **AquaRoute** is an AI sustainability gateway and live infrastructure telemetry dashboard that makes the estimated resource impact of LLM requests visible and enables resource-aware model routing and semantic caching. By classifying query complexity, checking a semantic cache, and dynamically routing requests between small and large model tiers, AquaRoute aims to reduce unnecessary model computation while making each routing decision and its estimated resource impact transparent..
 
 ---
 
