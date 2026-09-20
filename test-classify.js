@@ -1,4 +1,4 @@
-const classify = require("./classify");
+const classify = require("./server/services/classify");
 
 const testPrompts = [
 

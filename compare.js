@@ -1,9 +1,9 @@
 require("dotenv").config();
 
 const prompts = require("./experiments/prompts.json");
-const classify = require("./classify");
-const callModel = require("./callModel");
-const estimate = require("./estimate");
+const classify = require("./server/services/classify");
+const callModel = require("./server/services/callModel");
+const estimate = require("./server/services/estimate");
 
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 

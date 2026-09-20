@@ -9,7 +9,7 @@ AI applications default to routing every query through the largest available mod
 ## Target Users
 Primary: developers/teams building on LLM APIs who want lower cost and resource use without manually picking a model per request.
 Demo framing: a dashboard the user directly operates — every visual element reacts to what the router is actually doing on their specific request, in real time. The product is the visibility into the pipeline, not just the chat answers it produces.
-
+ 
 ## Goal
 Make an AI request's full lifecycle — classification, cache check, model selection, resource cost — visible and interactive, so the user directly experiences *why* a decision was made and *what it cost*, rather than being told a summary number after the fact.
 

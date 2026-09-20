@@ -6,7 +6,7 @@ Dark, polished developer-tool aesthetic — closer to an infrastructure monitori
 ## Typography
 Inter for UI text; a monospace font (`"JetBrains Mono", "SF Mono", monospace`) for the pipeline diagram, token counts, and resource numbers — reinforces the "infrastructure telemetry" feel and makes numbers easy to scan.
 
-## Colors — Dark Theme (primary, default)
+## Colors — Dark Theme (primary, default) 
 - Background: `#0B1120`
 - Surface (cards/panels): `#161E2E`
 - Surface elevated (active pipeline stage): `#1E293B`

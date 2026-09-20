@@ -1,5 +1,5 @@
-const classify = require("./classify");
-const callModel = require("./callModel");
+const classify = require("./server/services/classify");
+const callModel = require("./server/services/callModel");
 
 async function run() {
   const prompt = "What's the capital of France?";

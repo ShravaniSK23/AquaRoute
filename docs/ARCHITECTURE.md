@@ -9,7 +9,7 @@ Tiered the same way as PRD.md — **Core** is what makes the dashboard actually 
 
 ## Architecture Diagram (Core)
 
-```
+``` 
 User
   ↓
 Frontend (dashboard: pipeline viz, decision card, live meter, timeline, analytics)
