@@ -3,19 +3,46 @@ function classify(prompt) {
   const text = prompt.toLowerCase();
 
   const complexSignals = [
+    "design",
+    "architecture",
+    "prove",
+    "analyze",
+    "analysis",
+    "strategy",
+    "distributed",
+    "explain why",
+    "compare and contrast",
+    "draft a response",
 
-    "design", "architecture", "prove", "analyze", "strategy",
+    // Coding / technical reasoning
+    "write a program",
+    "write a function",
+    "implement",
+    "debug",
+    "code",
+    "algorithm",
+    "time complexity",
+    "space complexity",
 
-    "distributed", "explain why", "compare and contrast", "draft a response"
-
+    // Multi-step / deeper reasoning
+    "step by step",
+    "solve",
+    "derive",
+    "evaluate",
+    "optimize",
+    "why does",
+    "how does",
+    "explain how"
   ];
 
-  const isLong = prompt.split(" ").length > 25;
+  const isLong = prompt.split(/\s+/).length > 25;
 
-  const hasComplexSignal = complexSignals.some(sig => text.includes(sig));
+  const hasComplexSignal =
+    complexSignals.some(signal => text.includes(signal));
 
-  return (isLong || hasComplexSignal) ? "large" : "small";
-
+  return (isLong || hasComplexSignal)
+    ? "large"
+    : "small";
 }
 
 module.exports = classify;

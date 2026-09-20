@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>AquaRoute</title>
+
+  <!-- Markdown renderer -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    #totals {
+      display: flex;
+      gap: 24px;
+      margin: 20px 0;
+      padding: 16px;
+      background: #f0f7f4;
+      border-radius: 8px;
+    }
+
+    .stat {
+      flex: 1;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 1.4em;
+    }
+
+    #prompt {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .response {
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
+    .tag.small {
+      background: #d1f0d1;
+    }
+
+    .tag.large {
+      background: #f0d1d1;
+    }
+
+    .tag.cached {
+      background: #d1e0f0;
+    }
+
+    .receipt {
+      margin-top: 10px;
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    .loading {
+      color: #666;
+    }
+
+    /* Markdown response formatting */
+
+    .response-content {
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+
+    .response-content h1,
+    .response-content h2,
+    .response-content h3 {
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+
+    .response-content p {
+      margin: 10px 0;
+    }
+
+    .response-content ul,
+    .response-content ol {
+      padding-left: 24px;
+    }
+
+    .response-content pre {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    .response-content code {
+      font-family: monospace;
+    }
+
+    .response-content table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 12px 0;
+    }
+
+    .response-content th,
+    .response-content td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>💧 AquaRoute</h1>
+
+  <p>
+    Ask something. AquaRoute picks the smallest model that can actually answer it.
+  </p>
+
+  <!-- Resource totals -->
+
+  <div id="totals">
+
+    <div class="stat">
+      AquaRoute total<br>
+      <b id="routedTotal">0.00 mL</b>
+    </div>
+
+    <div class="stat">
+      If always-large<br>
+      <b id="baselineTotal">—</b>
+    </div>
+
+    <div class="stat">
+      Saved<br>
+      <b id="savedPct">—</b>
+    </div>
+
+  </div>
+
+  <!-- Prompt input -->
+
+  <input
+    id="prompt"
+    type="text"
+    placeholder="Ask a question..."
+  >
+
+  <button id="sendButton" onclick="submitPrompt()">Send</button>
+
+  <!-- Responses appear here -->
+
+  <div id="output"></div>
+
+  <script>
+
+    // --------------------------------------------------
+    // Running totals for this browser session
+    // --------------------------------------------------
+
+    let routedTotal = 0;
+    let baselineTotal = 0;
+
+
+    // --------------------------------------------------
+    // Measured always-large baseline values
+    //
+    // These values were obtained from compare.js by
+    // actually calling the large model for each prompt.
+    // --------------------------------------------------
+
+    const measuredBaselines = {
+
+      "What is the capital of France?": {
+        waterMl: 3.08,
+        energyWh: 0.462,
+        tokens: 77
+      },
+
+      "What is 25 multiplied by 4?": {
+        waterMl: 4.64,
+        energyWh: 0.696,
+        tokens: 116
+      },
+
+      "What is the capital of Japan?": {
+        waterMl: 4.52,
+        energyWh: 0.678,
+        tokens: 113
+      },
+
+      "Explain how photosynthesis works.": {
+        waterMl: 67.64,
+        energyWh: 10.146,
+        tokens: 1691
+      },
+
+      "What is 2 plus 2?": {
+        waterMl: 3.80,
+        energyWh: 0.570,
+        tokens: 95
+      }
+
+    };
+
+
+    // --------------------------------------------------
+    // Submit prompt
+    // --------------------------------------------------
+
+    async function submitPrompt() {
+
+      const input = document.getElementById("prompt");
+      const prompt = input.value.trim();
+
+      if (!prompt) {
+        return;
+      }
+
+      const output = document.getElementById("output");
+      const sendButton = document.getElementById("sendButton");
+
+      // Prevent multiple requests from one/multiple clicks
+      sendButton.disabled = true;
+      sendButton.textContent = "Thinking...";
+
+      // Show exactly one loading message
+      const loading = document.createElement("div");
+      loading.id = "loadingMessage";
+      loading.className = "response loading";
+      loading.textContent = "Thinking...";
+
+      output.prepend(loading);
+
+      try {
+
+        // ----------------------------------------------
+        // Send request to AquaRoute backend
+        // ----------------------------------------------
+
+        const res = await fetch("/generate", {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            prompt: prompt
+          })
+
+        });
+
+
+        const data = await res.json();
+
+
+        // ----------------------------------------------
+        // Handle backend errors
+        // ----------------------------------------------
+
+        if (!res.ok) {
+          throw new Error(
+            data.error || "Request failed"
+          );
+        }
+
+
+        // ----------------------------------------------
+        // AquaRoute resource usage
+        //
+        // Comes directly from the backend.
+        // Cache hits return 0.
+        // ----------------------------------------------
+
+        const waterMl =
+          Number(data.resources?.waterMl) || 0;
+
+        routedTotal += waterMl;
+
+
+        // ----------------------------------------------
+        // Measured always-large baseline
+        //
+        // Only use a value that was actually measured
+        // using compare.js.
+        // ----------------------------------------------
+
+        const baseline =
+          measuredBaselines[prompt];
+
+        if (baseline) {
+          baselineTotal += baseline.waterMl;
+        }
+
+
+        // ----------------------------------------------
+        // Update totals
+        // ----------------------------------------------
+
+        renderTotals();
+
+
+        // ----------------------------------------------
+        // Display response
+        // ----------------------------------------------
+
+        renderResponse(
+          prompt,
+          data,
+          waterMl
+        );
+
+
+        input.value = "";
+
+      } catch (error) {
+
+        // Remove loading message
+        removeLoadingMessage();
+
+        output.prepend(
+          createErrorCard(error.message)
+        );
+
+      } finally {
+
+        // Always enable the button again
+        sendButton.disabled = false;
+        sendButton.textContent = "Send";
+      }
+
+    }
+
+
+    // --------------------------------------------------
+    // Remove loading message
+    // --------------------------------------------------
+
+    function removeLoadingMessage() {
+
+      const loading =
+        document.getElementById("loadingMessage");
+
+      if (loading) {
+        loading.remove();
+      }
+
+    }
+
+
+    // --------------------------------------------------
+    // Render totals
+    // --------------------------------------------------
+
+    function renderTotals() {
+
+      document.getElementById(
+        "routedTotal"
+      ).textContent =
+        routedTotal.toFixed(2) + " mL";
+
+
+      const baselineElement =
+        document.getElementById("baselineTotal");
+
+      const savedElement =
+        document.getElementById("savedPct");
+
+
+      // Only show comparison when we actually
+      // have measured baseline data.
+
+      if (baselineTotal > 0) {
+
+        baselineElement.textContent =
+          baselineTotal.toFixed(2) + " mL";
+
+
+        const saved =
+          100 -
+          (routedTotal / baselineTotal) * 100;
+
+
+        savedElement.textContent =
+          saved.toFixed(1) + "%";
+
+      } else {
+
+        baselineElement.textContent = "—";
+        savedElement.textContent = "—";
+
+      }
+
+    }
+
+
+    // --------------------------------------------------
+    // Render individual response
+    // --------------------------------------------------
+
+    function renderResponse(
+      prompt,
+      data,
+      waterMl
+    ) {
+
+      // Remove loading message first
+      removeLoadingMessage();
+
+
+      const output =
+        document.getElementById("output");
+
+
+      // ----------------------------------------------
+      // Determine badge
+      // ----------------------------------------------
+
+      const tagClass =
+        data.cached
+          ? "cached"
+          : data.tier;
+
+
+      let tagLabel;
+
+      if (data.cached) {
+        tagLabel = "Cached";
+      } else if (data.tier === "small") {
+        tagLabel = "Small model";
+      } else if (data.tier === "large") {
+        tagLabel = "Large model";
+      } else {
+        tagLabel = data.tier || "Unknown";
+      }
+
+
+      // ----------------------------------------------
+      // Cache message
+      // ----------------------------------------------
+
+      const cacheMessage =
+        data.cached
+          ? "Served from cache — 0 new computation"
+          : "";
+
+
+      // ----------------------------------------------
+      // Check whether this prompt has a measured
+      // always-large baseline
+      // ----------------------------------------------
+
+      const hasBaseline =
+        measuredBaselines[prompt] !== undefined;
+
+
+      const baselineMessage =
+        hasBaseline
+          ? ""
+          : "Always-large comparison is available for the benchmark prompts only.";
+
+
+      // ----------------------------------------------
+      // Convert Gemini Markdown → HTML
+      // ----------------------------------------------
+
+      const renderedResponse =
+        marked.parse(data.response || "");
+
+
+      // ----------------------------------------------
+      // Create response card
+      // ----------------------------------------------
+
+      const responseCard = `
+
+        <div class="response">
+
+          <div>
+
+            <b>${escapeHtml(prompt)}</b>
+
+            <span class="tag ${tagClass}">
+              ${escapeHtml(tagLabel)}
+            </span>
+
+          </div>
+
+
+          <div class="response-content">
+            ${renderedResponse}
+          </div>
+
+
+          <div class="receipt">
+
+            ≈ ${waterMl.toFixed(3)}
+            mL estimated water impact
+
+            ${cacheMessage
+              ? `<br>${escapeHtml(cacheMessage)}`
+              : ""
+            }
+
+          </div>
+
+
+          ${
+            baselineMessage
+              ? `<div class="receipt">
+                   ${escapeHtml(baselineMessage)}
+                 </div>`
+              : ""
+          }
+
+        </div>
+
+      `;
+
+
+      output.prepend(
+        htmlToElement(responseCard)
+      );
+
+    }
+
+
+    // --------------------------------------------------
+    // Create error card
+    // --------------------------------------------------
+
+    function createErrorCard(message) {
+
+      return htmlToElement(`
+
+        <div class="response">
+
+          <b>Error</b>
+
+          <p>
+            ${escapeHtml(message)}
+          </p>
+
+        </div>
+
+      `);
+
+    }
+
+
+    // --------------------------------------------------
+    // Convert HTML string to DOM element
+    // --------------------------------------------------
+
+    function htmlToElement(html) {
+
+      const template =
+        document.createElement("template");
+
+      template.innerHTML = html.trim();
+
+      return template.content.firstElementChild;
+
+    }
+
+
+    // --------------------------------------------------
+    // Escape HTML
+    // --------------------------------------------------
+
+    function escapeHtml(text) {
+
+      const div =
+        document.createElement("div");
+
+      div.textContent = text;
+
+      return div.innerHTML;
+
+    }
+
+
+    // --------------------------------------------------
+    // Allow Enter key to send the prompt
+    // --------------------------------------------------
+
+    document
+      .getElementById("prompt")
+      .addEventListener("keydown", function(event) {
+
+        if (
+          event.key === "Enter" &&
+          !event.shiftKey
+        ) {
+
+          event.preventDefault();
+
+          const sendButton =
+            document.getElementById("sendButton");
+
+          if (!sendButton.disabled) {
+            submitPrompt();
+          }
+
+        }
+
+      });
+s
+  </script>
+
+</body>
+
+</html>

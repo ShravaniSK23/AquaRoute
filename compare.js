@@ -14,10 +14,20 @@ async function run() {
   let baselineWater = 0;
   let baselineEnergy = 0;
 
+  const baselineResults = {};
+
   for (const p of prompts) {
 
+    console.log("\n========================================");
+    console.log(`PROMPT: ${p.text}`);
+
+    // ----------------------------------------
     // AquaRoute
+    // ----------------------------------------
+
     const tier = classify(p.text);
+
+    console.log(`AquaRoute selected: ${tier}`);
 
     const routedResult = await callModel(p.text, tier);
 
@@ -29,10 +39,22 @@ async function run() {
     routedWater += routedEst.waterMl;
     routedEnergy += routedEst.energyWh;
 
-    await wait(1500); // free-tier rate limit buffer
+    console.log(
+      `AquaRoute tokens: ${routedResult.usage?.totalTokenCount}`
+    );
 
+    console.log(
+      `AquaRoute water: ${routedEst.waterMl} mL`
+    );
 
-    // Baseline: always use large model
+    await wait(1500);
+
+    // ----------------------------------------
+    // Baseline: always large
+    // ----------------------------------------
+
+    console.log("Running always-large baseline...");
+
     const baselineResult = await callModel(p.text, "large");
 
     const baselineEst = estimate(
@@ -43,20 +65,48 @@ async function run() {
     baselineWater += baselineEst.waterMl;
     baselineEnergy += baselineEst.energyWh;
 
-    await wait(1500); // free-tier rate limit buffer
+    console.log(
+      `Baseline tokens: ${baselineResult.usage?.totalTokenCount}`
+    );
+
+    console.log(
+      `Baseline water: ${baselineEst.waterMl} mL`
+    );
+
+    // Save measured baseline for frontend
+    baselineResults[p.text] = {
+      waterMl: baselineEst.waterMl,
+      energyWh: baselineEst.energyWh,
+      tokens: baselineResult.usage?.totalTokenCount
+    };
+
+    await wait(1500);
   }
 
+  // ----------------------------------------
+  // Final totals
+  // ----------------------------------------
+
+  console.log("\n\n========================================");
+  console.log("FINAL EXPERIMENT RESULTS");
+  console.log("========================================");
+
   console.log(
-    `AquaRoute: ${routedWater.toFixed(2)} mL water, ${routedEnergy.toFixed(2)} Wh`
+    `AquaRoute: ${routedWater.toFixed(2)} mL water, ` +
+    `${routedEnergy.toFixed(2)} Wh`
   );
 
   console.log(
-    `Baseline (always large): ${baselineWater.toFixed(2)} mL water, ${baselineEnergy.toFixed(2)} Wh`
+    `Baseline (always large): ${baselineWater.toFixed(2)} mL water, ` +
+    `${baselineEnergy.toFixed(2)} Wh`
   );
 
   console.log(
     `Savings: ${(100 - (routedWater / baselineWater) * 100).toFixed(1)}%`
   );
+
+  console.log("\n\nBASELINE DATA FOR FRONTEND:");
+  console.log(JSON.stringify(baselineResults, null, 2));
 }
 
 run();
