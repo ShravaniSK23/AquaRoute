@@ -10,6 +10,101 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let isCompareMode = false;
 
+  // =========================================
+  // SPA View Routing & Navigation Controller
+  // =========================================
+  const views = {
+    overview: document.getElementById("view-overview"),
+    routing: document.getElementById("view-routing"),
+    trace: document.getElementById("view-trace"),
+    water: document.getElementById("view-water")
+  };
+
+  const navLinks = {
+    overview: document.getElementById("nav-overview"),
+    routing: document.getElementById("nav-routing"),
+    trace: document.getElementById("nav-trace"),
+    water: document.getElementById("nav-water")
+  };
+
+  const breadcrumbEl = document.getElementById("header-breadcrumb");
+
+  const viewTitles = {
+    overview: "Overview",
+    routing: "Routing Engine",
+    trace: "Trace Stream",
+    water: "Water Impact Matrix"
+  };
+
+  function switchView(target) {
+    if (!views[target]) target = "overview";
+
+    Object.keys(views).forEach((key) => {
+      if (views[key]) {
+        views[key].classList.toggle("active", key === target);
+      }
+      if (navLinks[key]) {
+        navLinks[key].classList.toggle("active", key === target);
+      }
+    });
+
+    if (breadcrumbEl && viewTitles[target]) {
+      breadcrumbEl.textContent = viewTitles[target];
+    }
+
+    const scrollable = document.querySelector(".dashboard-scrollable");
+    if (scrollable) scrollable.scrollTop = 0;
+
+    if (window.location.hash !== `#${target}`) {
+      try {
+        history.replaceState(null, "", `#${target}`);
+      } catch (e) {}
+    }
+  }
+
+  // Expose globally for buttons and dashboard.js
+  window.AquaRoute = window.AquaRoute || {};
+  window.AquaRoute.switchView = switchView;
+
+  // Bind Sidebar Nav Links
+  Object.keys(navLinks).forEach((key) => {
+    const link = navLinks[key];
+    if (link) {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        switchView(key);
+      });
+    }
+  });
+
+  // Bind any elements with data-nav attribute (e.g. hub cards or in-page buttons)
+  document.addEventListener("click", (e) => {
+    const target = e.target.closest("[data-nav]");
+    if (target) {
+      const viewKey = target.getAttribute("data-nav");
+      if (viewKey) {
+        e.preventDefault();
+        switchView(viewKey);
+      }
+    }
+  });
+
+  // Handle browser back/forward
+  window.addEventListener("hashchange", () => {
+    const hash = window.location.hash.replace("#", "").toLowerCase();
+    if (views[hash]) {
+      switchView(hash);
+    }
+  });
+
+  // Set initial view from URL hash if valid, otherwise default to overview
+  const initialHash = window.location.hash.replace("#", "").toLowerCase();
+  if (views[initialHash]) {
+    switchView(initialHash);
+  } else {
+    switchView("overview");
+  }
+
   // Health check polling loop (every 10 seconds)
   const pollHealth = async () => {
     const health = await Api.checkHealth();
@@ -33,6 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const handleSubmit = async () => {
     const prompt = promptInput.value.trim();
     if (!prompt) return;
+
+    // Switch to routing view immediately so user sees live pipeline and response
+    switchView("routing");
 
     // Lock UI during active request
     sendBtn.disabled = true;
@@ -74,6 +172,16 @@ document.addEventListener("DOMContentLoaded", () => {
         promptInput.value = "";
         sendBtn.disabled = false;
         sendBtn.innerHTML = `<span>Send</span>`;
+
+        // Sync Earth Forward micro-impact indicator
+        const savedPctEl = document.getElementById("metric-saved-pct");
+        const impactText = document.getElementById("earth-forward-text");
+        if (savedPctEl && impactText) {
+          const val = savedPctEl.textContent.trim();
+          if (val && val !== "0.0%" && val !== "—") {
+            impactText.innerHTML = `<strong id="earth-reduction-pct">${val} reduction</strong> = Equivalent to saving ~3 drops of server cooling water &amp; 2.4 min of LED power per query.`;
+          }
+        }
       }
     });
   };
@@ -99,6 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const text = chip.getAttribute("data-prompt");
       if (text && promptInput) {
         promptInput.value = text;
+        switchView("routing");
         promptInput.focus();
       }
     });
@@ -118,6 +227,14 @@ document.addEventListener("DOMContentLoaded", () => {
     resetBtn.addEventListener("click", () => {
       if (confirm("Reset current session telemetry and clear timeline?")) {
         Dashboard.resetSession();
+        const savedPctEl = document.getElementById("metric-saved-pct");
+        const baselineEl = document.getElementById("metric-baseline-total");
+        const impactText = document.getElementById("earth-forward-text");
+        if (savedPctEl) savedPctEl.textContent = "0.0%";
+        if (baselineEl) baselineEl.textContent = "0.0000 mL";
+        if (impactText) {
+          impactText.innerHTML = `<strong id="earth-reduction-pct">0.0% reduction</strong> = Awaiting queries to measure server cooling water &amp; LED power savings.`;
+        }
       }
     });
   }

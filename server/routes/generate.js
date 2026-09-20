@@ -326,9 +326,19 @@ router.get("/generate/stream", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
+  let isClosed = false;
+  req.on("close", () => {
+    isClosed = true;
+  });
+
   const sendEvent = (eventName, payload) => {
-    res.write(`event: ${eventName}\n`);
-    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    if (isClosed || res.writableEnded || res.destroyed) return;
+    try {
+      res.write(`event: ${eventName}\n`);
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    } catch (err) {
+      // Connection closed by client
+    }
   };
 
   try {
@@ -340,14 +350,20 @@ router.get("/generate/stream", async (req, res) => {
     });
   } catch (err) {
     logError({ requestId, stage: "pipeline_error", error: err });
-    sendEvent("error", {
-      stage: "error",
-      requestId,
-      error: err.message || "Pipeline error",
-      code: err.code || "PIPELINE_ERROR"
-    });
+    if (!isClosed && !res.writableEnded && !res.destroyed) {
+      sendEvent("error", {
+        stage: "error",
+        requestId,
+        error: err.message || "Pipeline error",
+        code: err.code || "PIPELINE_ERROR"
+      });
+    }
   } finally {
-    res.end();
+    if (!res.writableEnded && !res.destroyed) {
+      try {
+        res.end();
+      } catch (e) {}
+    }
   }
 });
 

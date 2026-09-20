@@ -13,8 +13,8 @@ config.validateConfig();
 
 const app = express();
 
-// 2. Security headers via Helmet (disabling CSP header so CDN scripts and Google Fonts work seamlessly in demo)
-app.use(helmet({ contentSecurityPolicy: false }));
+// 2. Security headers via Helmet (disabling CSP and HSTS so local HTTP works seamlessly without browser forcing HTTPS)
+app.use(helmet({ contentSecurityPolicy: false, hsts: false }));
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
@@ -28,6 +28,15 @@ app.use(errorHandler);
 
 app.listen(config.port, () => {
   console.log(`AquaRoute server running on port ${config.port}`);
+});
+
+// Prevent unhandled errors or rejections from crashing the process
+process.on("uncaughtException", (err) => {
+  console.error("[Process Uncaught Exception]", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[Process Unhandled Rejection]", reason);
 });
 
 module.exports = app;

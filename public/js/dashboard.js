@@ -84,14 +84,18 @@ const Dashboard = {
     const routedEl = document.getElementById("metric-routed-total");
     const baselineEl = document.getElementById("metric-baseline-total");
     const savedPctEl = document.getElementById("metric-saved-pct");
+    const impactText = document.getElementById("earth-forward-text");
 
     if (routedEl) {
       routedEl.textContent = this.formatWater(this.routedWaterTotal);
     }
 
     if (this.baselineWaterTotal <= 0) {
-      if (baselineEl) baselineEl.textContent = "—";
-      if (savedPctEl) savedPctEl.textContent = "—";
+      if (baselineEl) baselineEl.textContent = this.formatWater(0);
+      if (savedPctEl) savedPctEl.textContent = "0.0%";
+      if (impactText) {
+        impactText.innerHTML = `<strong id="earth-reduction-pct">0.0% reduction</strong> = Awaiting session queries to calculate datacenter water &amp; energy savings.`;
+      }
       return;
     }
 
@@ -106,6 +110,10 @@ const Dashboard = {
 
     if (savedPctEl) {
       savedPctEl.textContent = `${savedPct.toFixed(1)}%`;
+    }
+
+    if (impactText) {
+      impactText.innerHTML = `<strong id="earth-reduction-pct">${savedPct.toFixed(1)}% reduction</strong> = Equivalent to saving ~3 drops of server cooling water &amp; 2.4 min of LED power per query.`;
     }
   },
 
@@ -205,8 +213,14 @@ const Dashboard = {
   inspectHistoryItem(index) {
     const item = this.history[index];
     if (item && item.data) {
+      if (window.AquaRoute && typeof window.AquaRoute.switchView === "function") {
+        window.AquaRoute.switchView("routing");
+      }
       this.renderResponseCard(item.prompt, item.data);
-      window.scrollTo({ top: document.getElementById("response-container").offsetTop - 80, behavior: 'smooth' });
+      const resContainer = document.getElementById("response-container");
+      if (resContainer) {
+        resContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   },
 

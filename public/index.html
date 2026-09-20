@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AquaRoute — AI Infrastructure Telemetry Dashboard</title>
+  <title>AquaRoute — AI Infrastructure Sustainability Gateway</title>
   
   <!-- Modern Dark Telemetry Stylesheet -->
   <link rel="stylesheet" href="styles.css">
@@ -11,114 +11,258 @@
   <!-- Markdown Renderer -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
-<body>
+<body class="app-layout">
 
   <!-- =========================================
-       HEADER & STATUS INDICATORS STRIP
+       FIXED LEFT NAVIGATION SIDEBAR (width ~220px)
   ========================================== -->
-  <header>
-    <div class="brand">
-      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-      </svg>
-      <div>
-        <div class="brand-title">AquaRoute <span class="brand-sub">/ Telemetry Gateway</span></div>
+  <aside class="app-sidebar">
+    <div class="sidebar-brand-wrapper">
+      <div class="sidebar-brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+        </svg>
+        <div class="brand-info">
+          <span class="brand-name">AquaRoute</span>
+          <span class="brand-tag">AI Sustainability Gateway</span>
+        </div>
       </div>
     </div>
 
-    <div class="header-controls">
-      <!-- Status Strip polling /health -->
-      <div class="status-strip">
-        <div class="status-item">
-          <span class="status-dot" id="status-api-dot"></span>
-          <span id="status-api-text">API Checking...</span>
-        </div>
-        <div class="status-item">
-          <span class="status-dot" id="status-cache-dot"></span>
-          <span id="status-cache-text">Cache Active</span>
-        </div>
-        <div class="status-item">
-          <span class="status-dot online"></span>
-          <span>Estimator Active</span>
+    <!-- Sidebar Navigation Links (Active View Switcher) -->
+    <nav class="sidebar-nav">
+      <a href="#overview" class="nav-item active" id="nav-overview" data-nav="overview">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span>Overview</span>
+      </a>
+      <a href="#routing" class="nav-item" id="nav-routing" data-nav="routing">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>Routing Engine</span>
+      </a>
+      <a href="#trace" class="nav-item" id="nav-trace" data-nav="trace">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        <span>Trace Stream</span>
+      </a>
+      <a href="#water" class="nav-item" id="nav-water" data-nav="water">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+        <span>Water Impact Matrix</span>
+      </a>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+      <div class="earth-forward-badge">
+        <span class="earth-icon">🌱</span>
+        <div class="earth-text">
+          <span class="earth-title">Earth Forward</span>
+          <span class="earth-sub">Build 2026</span>
         </div>
       </div>
-
-      <!-- Header Action Buttons -->
-      <button id="export-btn" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;">Export Session</button>
-      <button id="reset-btn" class="btn-destructive">Reset Session</button>
     </div>
-  </header>
+  </aside>
 
   <!-- =========================================
-       MAIN DASHBOARD LAYOUT
+       RIGHT MAIN PANEL (Full viewport, scrollable)
   ========================================== -->
-  <main>
+  <div class="main-wrapper">
 
-    <!-- METRICS DASHBOARD -->
-    <section class="metrics-grid">
-      <!-- AquaRoute Session Water -->
-      <div class="metric-card">
-        <div class="metric-label">AquaRoute Session Impact</div>
-        <div class="metric-value highlight" id="metric-routed-total">0.0000 mL</div>
-        <div class="metric-sub">Cumulative estimated water consumed</div>
+    <!-- FIXED TOP HEADER & STATUS STRIP -->
+    <header class="top-header">
+      <div class="header-title-wrap">
+        <div class="header-live-badge">
+          <span class="pulse-dot"></span>
+          <span>AquaRoute Gateway</span>
+          <span class="header-sep">/</span>
+          <span id="header-breadcrumb" class="breadcrumb-active">Overview</span>
+        </div>
       </div>
 
-      <!-- Always-Large Baseline -->
-      <div class="metric-card">
-        <div class="metric-label">If Always-Large Baseline</div>
-        <div class="metric-value" id="metric-baseline-total">—</div>
-        <div class="metric-sub">Hypothetical unrouted water baseline</div>
-      </div>
+      <div class="header-controls">
+        <!-- Status Strip polling /health -->
+        <div class="status-strip">
+          <div class="status-item">
+            <span class="status-dot online" id="status-api-dot"></span>
+            <span id="status-api-text">API Online</span>
+          </div>
+          <div class="status-item">
+            <span class="status-dot online" id="status-cache-dot"></span>
+            <span id="status-cache-text">Cache Active</span>
+          </div>
+          <div class="status-item">
+            <span class="status-dot online"></span>
+            <span>Estimator Active</span>
+          </div>
+        </div>
 
-      <!-- Saved Percentage -->
-      <div class="metric-card">
-        <div class="metric-label">Water Impact Reduction</div>
-        <div class="metric-value highlight" id="metric-saved-pct">—</div>
-        <div class="metric-sub">Savings vs always-large baseline</div>
+        <!-- Header Action Buttons -->
+        <button id="export-btn" class="btn-secondary" title="Export session telemetry">Export Session</button>
+        <button id="reset-btn" class="btn-destructive" title="Clear session metrics and history">Reset Session</button>
       </div>
-    </section>
+    </header>
 
-    <!-- SESSION ANALYTICS BAR (Tier 2 Feature 14) -->
-    <section class="analytics-section">
-      <div class="analytics-item">
-        <span class="analytics-label">Session Queries</span>
-        <span class="analytics-val" id="analytics-total-count">0</span>
-      </div>
-      <div class="analytics-item">
-        <span class="analytics-label">Small / Large Ratio</span>
-        <span class="analytics-val" id="analytics-ratio">0 S / 0 L</span>
-      </div>
-      <div class="analytics-item">
-        <span class="analytics-label">Cache Hit Rate</span>
-        <span class="analytics-val" id="analytics-hit-rate">0%</span>
-      </div>
-    </section>
+    <!-- SCROLLABLE DASHBOARD VIEW CONTAINER -->
+    <main class="dashboard-scrollable">
 
-    <!-- BENCHMARK MODE PANEL (Tier 3 Feature 20 - Visually Isolated) -->
-    <section class="benchmark-section" id="benchmark-panel"></section>
+      <!-- ====================================================================
+           VIEW 1: OVERVIEW PANEL
+           ==================================================================== -->
+      <section class="view-panel active" id="view-overview">
+        <div class="page-header">
+          <div class="page-tag">SYSTEM TELEMETRY</div>
+          <h1 class="page-title">Sustainability &amp; Telemetry Overview</h1>
+          <p class="page-desc">Live session datacenter cooling water consumption, query load distribution, and energy reduction metrics.</p>
+        </div>
 
-    <!-- 2-COLUMN DASHBOARD BODY -->
-    <div class="dashboard-layout">
-      
-      <!-- MAIN COLUMN -->
-      <div class="main-column">
+        <!-- TOP METRIC STAT CARDS -->
+        <section class="metrics-grid">
+          <!-- Card 1: Cumulative Water Consumed -->
+          <div class="metric-card">
+            <div class="metric-label">Cumulative Water Consumed</div>
+            <div class="metric-value highlight" id="metric-routed-total">0.0000 mL</div>
+            <div class="metric-sub">Live estimated water consumed this session</div>
+          </div>
 
-        <!-- LIVE ROUTING PIPELINE DIAGRAM -->
-        <section class="pipeline-section">
+          <!-- Card 2: Hypothetical Unrouted Baseline -->
+          <div class="metric-card">
+            <div class="metric-label">Hypothetical Unrouted Baseline</div>
+            <div class="metric-value" id="metric-baseline-total">0.0000 mL</div>
+            <div class="metric-sub">Always-large unrouted water baseline</div>
+          </div>
+
+          <!-- Card 3: Water Savings Percentage -->
+          <div class="metric-card">
+            <div class="metric-label">Water Savings Percentage</div>
+            <div class="metric-value">
+              <div class="savings-pill-container">
+                <span class="savings-pill-badge">
+                  <span id="metric-saved-pct">0.0%</span>
+                  <span class="savings-pill-label">Saved</span>
+                </span>
+              </div>
+            </div>
+            <div class="metric-sub">Cumulative reduction vs large tier baseline</div>
+          </div>
+        </section>
+
+        <!-- EARTH FORWARD MICRO-IMPACT INDICATOR -->
+        <div class="earth-forward-strip">
+          <div class="strip-content">
+            <span class="strip-icon">🌱</span>
+            <span class="strip-text" id="earth-forward-text">
+              <strong id="earth-reduction-pct">0.0% reduction</strong> = Awaiting session queries to calculate datacenter water &amp; energy savings.
+            </span>
+          </div>
+          <div class="strip-tag">Earth Forward 2026</div>
+        </div>
+
+        <!-- SESSION ANALYTICS BAR (Tier 2 Feature 14) -->
+        <section class="analytics-section">
+          <div class="analytics-item">
+            <span class="analytics-label">Session Queries</span>
+            <span class="analytics-val" id="analytics-total-count">0</span>
+          </div>
+          <div class="analytics-sep"></div>
+          <div class="analytics-item">
+            <span class="analytics-label">Small / Large Ratio</span>
+            <span class="analytics-val" id="analytics-ratio">0 Small / 0 Large</span>
+          </div>
+          <div class="analytics-sep"></div>
+          <div class="analytics-item">
+            <span class="analytics-label">Cache Hit Rate</span>
+            <span class="analytics-val" id="analytics-hit-rate">0%</span>
+          </div>
+        </section>
+
+        <!-- GATEWAY QUICK LAUNCH HUB CARDS -->
+        <div class="overview-hub-grid">
+          <div class="hub-card" data-nav="routing">
+            <div class="hub-header">
+              <div class="hub-icon-wrap routing-accent">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              </div>
+              <span class="hub-badge">Interactive</span>
+            </div>
+            <h3 class="hub-card-title">AI Routing Engine</h3>
+            <p class="hub-card-desc">Execute live prompts through semantic caching and dynamic complexity classification to conserve cooling water.</p>
+            <button class="btn-hub" data-nav="routing">Open Routing Engine →</button>
+          </div>
+
+          <div class="hub-card" data-nav="trace">
+            <div class="hub-header">
+              <div class="hub-icon-wrap trace-accent">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+              </div>
+              <span class="hub-badge">Real-Time</span>
+            </div>
+            <h3 class="hub-card-title">Execution Trace Stream</h3>
+            <p class="hub-card-desc">Inspect the 6-stage SSE pipeline in real time, audit latency, and review the chronological session history.</p>
+            <button class="btn-hub" data-nav="trace">Open Trace Stream →</button>
+          </div>
+
+          <div class="hub-card" data-nav="water">
+            <div class="hub-header">
+              <div class="hub-icon-wrap water-accent">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+              </div>
+              <span class="hub-badge">Telemetry</span>
+            </div>
+            <h3 class="hub-card-title">Water Impact Matrix</h3>
+            <p class="hub-card-desc">Review datacenter cooling efficiency (PUE/WUE), compare.js benchmark metrics, and telemetry units.</p>
+            <button class="btn-hub" data-nav="water">View Impact Matrix →</button>
+          </div>
+        </div>
+
+        <!-- SUSTAINABILITY ARCHITECTURE EXPLAINER -->
+        <div class="arch-banner">
+          <div class="arch-info">
+            <div class="arch-tag">ARCHITECTURE</div>
+            <h3 class="arch-title">How AquaRoute Conserves Datacenter Water</h3>
+            <p class="arch-desc">Datacenters evaporate gallons of water per hour to cool AI hardware clusters. AquaRoute uses semantic caching (0.0 mL water) and routes simple prompts to lightweight models (~0.3 mL) while reserving heavy large models (~5.0 mL) only for complex multi-step reasoning.</p>
+          </div>
+          <div class="arch-stats">
+            <div class="arch-stat-box">
+              <span class="arch-stat-num">0.0 mL</span>
+              <span class="arch-stat-sub">Semantic Cache</span>
+            </div>
+            <div class="arch-stat-box">
+              <span class="arch-stat-num">0.3 mL</span>
+              <span class="arch-stat-sub">Flash Lite (Small)</span>
+            </div>
+            <div class="arch-stat-box warning">
+              <span class="arch-stat-num">5.0 mL</span>
+              <span class="arch-stat-sub">Pro Tier (Large)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 2: ROUTING ENGINE PANEL
+           ==================================================================== -->
+      <section class="view-panel" id="view-routing">
+        <div class="page-header">
+          <div class="page-tag">GATEWAY EXECUTION</div>
+          <h1 class="page-title">AI Routing Engine</h1>
+          <p class="page-desc">Dispatch queries through the dynamic classification pipeline to minimize water consumption in real time.</p>
+        </div>
+
+        <!-- LIVE ROUTING PIPELINE STREAM -->
+        <section class="pipeline-section" id="pipeline-section">
           <div class="pipeline-header">
             <div class="pipeline-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-              Live Routing Pipeline Stream
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+              <span>Live Routing Pipeline Stream</span>
             </div>
+            <span class="pipeline-status-tag">Real-time SSE Stream</span>
           </div>
           <div class="pipeline-diagram" id="pipeline-diagram"></div>
         </section>
 
         <!-- PROMPT INPUT & CONTROLS -->
-        <section class="prompt-section">
+        <section class="prompt-section" id="prompt-section">
           <div class="prompt-toolbar">
             <div class="demo-chips">
-              <span class="chip-label">Demo Chips:</span>
+              <span class="chip-label">Quick Demos:</span>
               <button class="chip" data-prompt="What is 2 plus 2?">Simple Prompt</button>
               <button class="chip" data-prompt="Design a distributed architecture that handles 100,000 requests per second with high availability.">Complex Prompt</button>
               <button class="chip" data-prompt="What is 2 plus 2?">Cache Hit (Repeat)</button>
@@ -134,77 +278,240 @@
             <div class="input-hint">Press <strong>Enter</strong> to send · <strong>Shift + Enter</strong> for line break</div>
             <div class="action-buttons">
               <button id="send-btn" class="btn-primary">
-                <span>Send</span>
+                <span>Send Prompt</span>
               </button>
             </div>
           </div>
         </section>
 
         <!-- RESPONSE CARDS CONTAINER -->
-        <section id="response-container" class="response-container"></section>
-
-      </div>
-
-      <!-- SIDEBAR COLUMN -->
-      <aside class="sidebar">
-
-        <!-- RECENT REQUEST TIMELINE (Tier 2 Feature 15) -->
-        <div class="sidebar-card">
-          <div class="sidebar-title">
-            <span>Recent Timeline</span>
-            <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">Session Log</span>
+        <section id="response-container" class="response-container">
+          <div class="response-empty-state">
+            <div class="empty-icon">⚡</div>
+            <div class="empty-title">Awaiting Gateway Execution</div>
+            <p class="empty-sub">Choose a Quick Demo prompt above or write your custom query and click <strong>Send Prompt</strong> to watch the live pipeline execute and inspect telemetry.</p>
           </div>
-          <div class="timeline-list" id="timeline-container"></div>
+        </section>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 3: TRACE STREAM PANEL
+           ==================================================================== -->
+      <section class="view-panel" id="view-trace">
+        <div class="page-header">
+          <div class="page-tag">OBSERVABILITY &amp; AUDIT</div>
+          <h1 class="page-title">Live Execution Trace Stream</h1>
+          <p class="page-desc">Chronological request execution logs, model tier classifications, latency metrics, and water consumption.</p>
         </div>
 
-        <!-- SETTINGS PANEL (Tier 3 Feature 21) -->
-        <div class="sidebar-card">
-          <div class="sidebar-title">Settings</div>
-          <div class="settings-group">
-            <div class="setting-row">
-              <span class="setting-label">Semantic Cache</span>
-              <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="setting-cache-toggle" checked style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
-              </label>
+        <div class="trace-view-grid">
+          <!-- Main Timeline Feed -->
+          <div class="trace-main-panel">
+            <div class="trace-panel-header">
+              <div class="trace-title-group">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span class="trace-panel-title">Session Query Audit Stream</span>
+              </div>
+              <span class="session-badge">Live Stream</span>
             </div>
-            <div class="setting-row">
-              <span class="setting-label">Water Unit</span>
-              <select id="setting-water-unit" class="setting-select">
-                <option value="mL">mL (milliliters)</option>
-                <option value="L">L (liters)</option>
-              </select>
+            <p class="trace-helper-note">Click any request below to load its full generated output in the Routing Engine.</p>
+            <div class="timeline-list trace-timeline-expanded" id="timeline-container"></div>
+          </div>
+
+          <!-- Trace Observability Info Sidebar -->
+          <aside class="trace-sidebar-panel">
+            <div class="sidebar-card">
+              <div class="sidebar-title">Pipeline Stages Breakdown</div>
+              <div class="pipeline-breakdown-list">
+                <div class="stage-step-item">
+                  <span class="step-num">1</span>
+                  <div class="step-details">
+                    <strong class="step-title">Received</strong>
+                    <span class="step-desc">API ingress validates payload &amp; creates request ID</span>
+                  </div>
+                </div>
+                <div class="stage-step-item">
+                  <span class="step-num">2</span>
+                  <div class="step-details">
+                    <strong class="step-title">Classifier</strong>
+                    <span class="step-desc">Estimates prompt complexity &amp; token demand</span>
+                  </div>
+                </div>
+                <div class="stage-step-item">
+                  <span class="step-num">3</span>
+                  <div class="step-details">
+                    <strong class="step-title">Cache Check</strong>
+                    <span class="step-desc">Zero-water cache lookup for identical queries</span>
+                  </div>
+                </div>
+                <div class="stage-step-item">
+                  <span class="step-num">4</span>
+                  <div class="step-details">
+                    <strong class="step-title">Model Call</strong>
+                    <span class="step-desc">Dispatches to Small Tier or Large Tier model</span>
+                  </div>
+                </div>
+                <div class="stage-step-item">
+                  <span class="step-num">5</span>
+                  <div class="step-details">
+                    <strong class="step-title">Estimator</strong>
+                    <span class="step-desc">Computes real-time mL water &amp; Wh energy footprint</span>
+                  </div>
+                </div>
+                <div class="stage-step-item">
+                  <span class="step-num">6</span>
+                  <div class="step-details">
+                    <strong class="step-title">Complete</strong>
+                    <span class="step-desc">SSE event completes &amp; closes telemetry stream</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="setting-row">
-              <span class="setting-label">Energy Unit</span>
-              <select id="setting-energy-unit" class="setting-select">
-                <option value="Wh">Wh (Watt-hours)</option>
-                <option value="kWh">kWh (k kilowatt-hours)</option>
-              </select>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 4: WATER IMPACT MATRIX PANEL
+           ==================================================================== -->
+      <section class="view-panel" id="view-water">
+        <div class="page-header">
+          <div class="page-tag">SUSTAINABILITY &amp; BENCHMARKS</div>
+          <h1 class="page-title">Water Impact Matrix &amp; Settings</h1>
+          <p class="page-desc">Datacenter water consumption models, pre-measured evaluation suite benchmarks, and telemetry units.</p>
+        </div>
+
+        <!-- BENCHMARK MODE PANEL (compare.js - pre-measured benchmark) -->
+        <section class="benchmark-section" id="benchmark-panel"></section>
+
+        <!-- DATACENTER WATER FOOTPRINT COMPARISON TABLE -->
+        <div class="matrix-card">
+          <div class="matrix-header">
+            <h3 class="matrix-title">Datacenter Water &amp; Energy Intensity Matrix</h3>
+            <span class="matrix-tag">Gemini 2.5 Infrastructure</span>
+          </div>
+          <div class="table-responsive">
+            <table class="impact-table">
+              <thead>
+                <tr>
+                  <th>Routing Tier</th>
+                  <th>Target Model</th>
+                  <th>Water Intensity</th>
+                  <th>Energy Intensity</th>
+                  <th>Efficiency Factor</th>
+                  <th>Cooling Impact</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="tag small">Small Model</span></td>
+                  <td>Gemini 2.5 Flash Lite</td>
+                  <td><strong>0.002 mL / tok</strong> (~0.30 mL avg)</td>
+                  <td>0.0003 Wh / tok</td>
+                  <td><span class="pill-green">16.7x Reduction</span></td>
+                  <td>Low Evaporative Chilling</td>
+                </tr>
+                <tr>
+                  <td><span class="tag large">Large Model</span></td>
+                  <td>Gemini 2.5 Flash / Pro</td>
+                  <td><strong>0.040 mL / tok</strong> (~5.00 mL avg)</td>
+                  <td>0.0060 Wh / tok</td>
+                  <td><span class="pill-neutral">Baseline (1x)</span></td>
+                  <td>High Evaporative Chilling</td>
+                </tr>
+                <tr>
+                  <td><span class="tag cached">Semantic Cache</span></td>
+                  <td>In-Memory Vector Cache</td>
+                  <td><strong>0.000 mL</strong> (Zero Water)</td>
+                  <td>0.0001 Wh / req</td>
+                  <td><span class="pill-green">100% Conserved</span></td>
+                  <td>Zero Cooling Footprint</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ENVIRONMENTAL EQUIVALENCY CARDS -->
+        <div class="equiv-grid">
+          <div class="equiv-card">
+            <span class="equiv-icon">💧</span>
+            <div class="equiv-content">
+              <strong class="equiv-val">~3 Water Drops</strong>
+              <span class="equiv-label">Saved per routed query</span>
+              <p class="equiv-sub">Conserves chilled evaporative datacenter cooling water for every simple query routed to Small tier.</p>
+            </div>
+          </div>
+          <div class="equiv-card">
+            <span class="equiv-icon">💡</span>
+            <div class="equiv-content">
+              <strong class="equiv-val">2.4 Minutes</strong>
+              <span class="equiv-label">LED Bulb Power Saved</span>
+              <p class="equiv-sub">Equivalent electricity saved to power a 9W LED lamp continuously per routed request.</p>
+            </div>
+          </div>
+          <div class="equiv-card">
+            <span class="equiv-icon">🌡️</span>
+            <div class="equiv-content">
+              <strong class="equiv-val">0.26 L / kWh</strong>
+              <span class="equiv-label">Datacenter Water Effectiveness</span>
+              <p class="equiv-sub">Based on average hyperscale WUE (Water Usage Effectiveness) cooling ratios in 2026.</p>
             </div>
           </div>
         </div>
 
-        <!-- RESOURCE METHODOLOGY PANEL (Tier 2 Feature 18) -->
-        <div class="sidebar-card">
-          <div class="sidebar-title">Methodology</div>
-          <details class="methodology-details">
-            <summary>📖 Intensity Assumptions & Rates</summary>
-            <div class="methodology-content">
-              <p>Per-token intensity rates applied to real Gemini token counts:</p>
-              <ul>
-                <li><strong>Small (Flash Lite):</strong> 0.0003 Wh/token, 0.002 mL water/token</li>
-                <li><strong>Large (Flash):</strong> 0.006 Wh/token, 0.04 mL water/token</li>
-              </ul>
-              <p style="margin-top: 8px;"><strong>Limitations:</strong> Real datacenter water consumption depends on WUE, cooling system architecture, PUE, and local grid energy mix.</p>
+        <!-- SETTINGS & METHODOLOGY 2-COL -->
+        <div class="water-settings-grid">
+          <!-- SETTINGS PANEL (Tier 3 Feature 21) -->
+          <div class="sidebar-card">
+            <div class="sidebar-title">Telemetry Settings &amp; Units</div>
+            <div class="settings-group">
+              <div class="setting-row">
+                <span class="setting-label">Semantic Cache</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="setting-cache-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <span class="setting-label">Water Unit</span>
+                <select id="setting-water-unit" class="setting-select">
+                  <option value="mL">mL (milliliters)</option>
+                  <option value="L">L (liters)</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <span class="setting-label">Energy Unit</span>
+                <select id="setting-energy-unit" class="setting-select">
+                  <option value="Wh">Wh (Watt-hours)</option>
+                  <option value="kWh">kWh (kilowatt-hours)</option>
+                </select>
+              </div>
             </div>
-          </details>
+          </div>
+
+          <!-- RESOURCE METHODOLOGY PANEL (Tier 2 Feature 18) -->
+          <div class="sidebar-card">
+            <div class="sidebar-title">Resource Methodology</div>
+            <details class="methodology-details" open>
+              <summary>📖 Intensity Assumptions &amp; Rates</summary>
+              <div class="methodology-content">
+                <p>Per-token intensity rates applied to real Gemini token counts:</p>
+                <ul>
+                  <li><strong>Small (Flash Lite):</strong> 0.0003 Wh/token, 0.002 mL water/token</li>
+                  <li><strong>Large (Flash):</strong> 0.006 Wh/token, 0.04 mL water/token</li>
+                </ul>
+                <p class="methodology-limitation"><strong>Limitations:</strong> Real datacenter water consumption depends on WUE, cooling system architecture, PUE, and local grid energy mix.</p>
+              </div>
+            </details>
+          </div>
         </div>
 
-      </aside>
+      </section>
 
-    </div>
+    </main>
 
-  </main>
+  </div>
 
   <!-- =========================================
        JAVASCRIPT MODULES
